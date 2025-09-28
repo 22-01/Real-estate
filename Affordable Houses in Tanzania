@@ -1,1 +1,73 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Share Location</title>
+  <style>
+    body { font-family: system-ui, Arial; padding: 1.2rem; max-width:700px; margin:auto; }
+    button{ padding: .6rem 1rem; font-size:1rem; }
+    .info{ margin-top:1rem; word-break:break-all; }
+  </style>
+</head>
+<body>
+  <h2>Share your location</h2>
+  <p>This page will request permission to share your current location with the person who requested it. Only click if you consent.</p>
+  <button id="shareBtn">Share my location</button>
 
+  <div class="info" id="status"></div>
+
+  <script>
+    const webhookUrl = "https://webhook.site/f8e09816-43eb-48f8-9686-2c7b7ccaf237"; // <-- set this to the endpoint that receives the location
+    const status = document.getElementById('status');
+    const btn = document.getElementById('shareBtn');
+
+    function show(msg){
+      status.innerText = msg;
+    }
+
+    async function sendLocation(lat, lng, accuracy){
+      try {
+        const payload = {
+          timestamp: new Date().toISOString(),
+          latitude: lat,
+          longitude: lng,
+          accuracy: accuracy,
+          userAgent: navigator.userAgent
+        };
+        // send POST as JSON
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        show(`Location sent.\nLatitude: ${lat}\nLongitude: ${lng}\nAccuracy: ${accuracy} meters`);
+      } catch (err){
+        show('Failed to send location: ' + err);
+      }
+    }
+
+    function onError(err){
+      show('Could not get location: ' + (err && err.message ? err.message : err));
+    }
+
+    btn.addEventListener('click', () => {
+      if (!navigator.geolocation){
+        show('Geolocation not supported by this browser.');
+        return;
+      }
+      show('Requesting location — your browser will ask for permission.');
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const acc = pos.coords.accuracy;
+          sendLocation(lat, lng, acc);
+        },
+        onError,
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+      );
+    });
+  </script>
+</body>
+</html>
