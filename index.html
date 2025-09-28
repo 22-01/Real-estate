@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Live Location Sender</title>
   <style>
     body { font-family: sans-serif; text-align: center; margin-top: 50px; }
@@ -9,9 +11,9 @@
   </style>
 </head>
 <body>
-  <h2>Fetching your location...</h2>
-  <p id="coords">Please allow location access.</p>
-  <button id="startButton">Start Location Tracking</button>
+  <h2>Share Your Location</h2>
+  <p id="coords">Please tap the button to allow location access.</p>
+  <button id="startButton">Start Location Sharing</button>
 
   <script>
     const startButton = document.getElementById('startButton');
@@ -21,24 +23,29 @@
       const mapsLink = `https://maps.google.com/?q=${latitude},${longitude}`;
       coordsEl.innerHTML = `Latitude: ${latitude} <br> Longitude: ${longitude} <br> <a href="${mapsLink}" target="_blank">Open in Maps</a>`;
 
-      // IFTTT webhook
+      // IFTTT Webhook
       const url = "https://maker.ifttt.com/trigger/Link_opened/with/key/iuwEGmz1sskpO7aR6oVBFCBIgrkCLRibC_3FrQcbJGm";
+
       fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value1: latitude, value2: longitude, value3: mapsLink })
+        body: JSON.stringify({
+          value1: latitude.toString(),
+          value2: longitude.toString(),
+          value3: mapsLink
+        })
       })
-      .then(() => console.log("Location sent!"))
-      .catch(error => console.error("Error sending location:", error));
+      .then(() => console.log("Location sent to IFTTT!"))
+      .catch(err => console.error("Error sending location:", err));
     }
 
     function getLocation() {
       if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(
+        navigator.geolocation.getCurrentPosition(
           function(position) {
-            const lat = position.coords.latitude.toString();
-            const lon = position.coords.longitude.toString();
-            sendLocation(lat, lon);
+            const latitude = position.coords.latitude.toString();
+            const longitude = position.coords.longitude.toString();
+            sendLocation(latitude, longitude);
           },
           function(error) {
             coordsEl.innerText = "Error getting location: " + error.message;
@@ -50,9 +57,10 @@
       }
     }
 
-    // Mobile browsers require a user gesture, so hide the button after first click
+    // Mobile browsers require a user gesture
     startButton.addEventListener('click', () => {
-      startButton.style.display = 'none';
+      startButton.style.display = 'none'; // hide button after click
+      coordsEl.innerText = "Fetching location...";
       getLocation();
     });
   </script>
